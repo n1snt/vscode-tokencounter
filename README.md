@@ -10,11 +10,16 @@ A VS Code extension that shows the token count of the active editor file in the 
   - document edits
   - save
   - extension configuration change
-- Click the status bar item to toggle a detailed output panel.
+- Click the status bar item to open a picker and choose:
+  - encoding-based counting
+  - model-based counting (for example `gpt-4o-mini`)
+  - detailed info view
 
 ## Configuration
 
+- `tokenCount.countingMode` (string): `encoding` or `model`.
 - `tokenCount.encoding` (string): tiktoken encoding name (default: `cl100k_base`).
+- `tokenCount.model` (string): tiktoken model name (default: `gpt-4o-mini`).
 - `tokenCount.displayOnRightSide` (boolean): show on right status bar side.
 - `tokenCount.showForUntitled` (boolean): include untitled editors.
 

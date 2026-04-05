@@ -21,16 +21,34 @@
       {
         "command": "tokenCount.toggleDetails",
         "title": "Token Count: Toggle Detailed Information"
+      },
+      {
+        "command": "tokenCount.pickCounterSource",
+        "title": "Token Count: Choose Counter Source"
       }
     ],
     "configuration": {
       "type": "object",
       "title": "Token Count",
       "properties": {
+        "tokenCount.countingMode": {
+          "type": "string",
+          "default": "encoding",
+          "enum": [
+            "encoding",
+            "model"
+          ],
+          "description": "Choose whether token counts use a direct encoding or a model mapping."
+        },
         "tokenCount.encoding": {
           "type": "string",
           "default": "cl100k_base",
           "description": "tiktoken encoding to use for token counting (for example: cl100k_base, o200k_base, p50k_base)."
+        },
+        "tokenCount.model": {
+          "type": "string",
+          "default": "gpt-4o-mini",
+          "description": "Model name to use when countingMode is model (for example: gpt-4o-mini, gpt-4.1-mini, o4-mini)."
         },
         "tokenCount.displayOnRightSide": {
           "type": "boolean",

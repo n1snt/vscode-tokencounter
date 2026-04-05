@@ -1,13 +1,16 @@
 import * as vscode from "vscode";
 import type { TokenCountConfig } from "./config";
-import { readConfig } from "./config";
+import { readConfig, SUPPORTED_ENCODINGS, SUPPORTED_MODELS } from "./config";
 import { canTrackDocument } from "./documentGuards";
 import { formatTokenCount, renderTokenInfo } from "./format";
+import type { CounterSource } from "./tokenCounter";
 import { TokenCounter } from "./tokenCounter";
 import type { TokenInfo } from "./tokenCounter";
 
 const OUTPUT_CHANNEL_NAME = "Token Count";
+const CONFIG_SECTION = "tokenCount";
 const COMMAND_TOGGLE_DETAILS = "tokenCount.toggleDetails";
+const COMMAND_PICK_COUNTER_SOURCE = "tokenCount.pickCounterSource";
 
 interface ExtensionState {
   statusBarItem: vscode.StatusBarItem;
@@ -20,9 +23,35 @@ interface ExtensionState {
 function createStatusBarItem(config: TokenCountConfig): vscode.StatusBarItem {
   const alignment = config.displayOnRightSide ? vscode.StatusBarAlignment.Right : vscode.StatusBarAlignment.Left;
   const item = vscode.window.createStatusBarItem(alignment, 1);
-  item.command = COMMAND_TOGGLE_DETAILS;
-  item.tooltip = "Token Count - Click to toggle detailed information";
+  item.command = COMMAND_PICK_COUNTER_SOURCE;
+  item.tooltip = "Token Count - Click to choose model or encoding";
   return item;
+}
+
+function toCounterSource(config: TokenCountConfig): CounterSource {
+  if (config.countingMode === "model") {
+    return {
+      kind: "model",
+      model: config.model
+    };
+  }
+
+  return {
+    kind: "encoding",
+    encoding: config.encoding
+  };
+}
+
+function hasCounterSourceChanged(previous: TokenCountConfig, next: TokenCountConfig): boolean {
+  if (previous.countingMode !== next.countingMode) {
+    return true;
+  }
+
+  if (next.countingMode === "model") {
+    return previous.model !== next.model;
+  }
+
+  return previous.encoding !== next.encoding;
 }
 
 function computeInfo(
@@ -35,7 +64,8 @@ function computeInfo(
     lineCount: document.lineCount,
     characterCount: text.length,
     tokenCount: tokenCounter.count(text),
-    encoding: tokenCounter.getEncodingName()
+    sourceLabel: tokenCounter.getSourceLabel(),
+    encoding: tokenCounter.getResolvedEncodingName()
   };
 }
 
@@ -103,6 +133,89 @@ function toggleDetails(state: ExtensionState): void {
   state.isShowingDetails = true;
 }
 
+interface CounterActionItem extends vscode.QuickPickItem {
+  readonly action:
+    | { readonly kind: "showDetails" }
+    | { readonly kind: "useEncoding"; readonly encoding: (typeof SUPPORTED_ENCODINGS)[number] }
+    | { readonly kind: "useModel"; readonly model: (typeof SUPPORTED_MODELS)[number] };
+}
+
+function buildCounterSourceItems(config: TokenCountConfig): CounterActionItem[] {
+  const showDetailsItem: CounterActionItem = {
+    label: "$(list-selection) Show Detailed Info",
+    description: "Open token details for current file",
+    action: { kind: "showDetails" }
+  };
+
+  const encodingItems: CounterActionItem[] = SUPPORTED_ENCODINGS.map((encoding) => {
+    const isSelected = config.countingMode === "encoding" && config.encoding === encoding;
+    return {
+      label: isSelected ? `$(check) Encoding: ${encoding}` : `Encoding: ${encoding}`,
+      description: "Count using direct encoding",
+      action: {
+        kind: "useEncoding",
+        encoding
+      }
+    };
+  });
+
+  const modelItems: CounterActionItem[] = SUPPORTED_MODELS.map((model) => {
+    const isSelected = config.countingMode === "model" && config.model === model;
+    return {
+      label: isSelected ? `$(check) Model: ${model}` : `Model: ${model}`,
+      description: "Count using model mapping",
+      action: {
+        kind: "useModel",
+        model
+      }
+    };
+  });
+
+  return [
+    showDetailsItem,
+    { label: "Encodings", kind: vscode.QuickPickItemKind.Separator, action: { kind: "showDetails" } },
+    ...encodingItems,
+    { label: "Models", kind: vscode.QuickPickItemKind.Separator, action: { kind: "showDetails" } },
+    ...modelItems
+  ];
+}
+
+async function applyCounterSelection(selection: CounterActionItem): Promise<void> {
+  if (selection.action.kind === "showDetails") {
+    return;
+  }
+
+  const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION);
+  const target = vscode.workspace.workspaceFolders !== undefined && vscode.workspace.workspaceFolders.length > 0
+    ? vscode.ConfigurationTarget.Workspace
+    : vscode.ConfigurationTarget.Global;
+  if (selection.action.kind === "useEncoding") {
+    await configuration.update("countingMode", "encoding", target);
+    await configuration.update("encoding", selection.action.encoding, target);
+    return;
+  }
+
+  await configuration.update("countingMode", "model", target);
+  await configuration.update("model", selection.action.model, target);
+}
+
+async function pickCounterSource(state: ExtensionState): Promise<void> {
+  const picked = await vscode.window.showQuickPick(buildCounterSourceItems(state.config), {
+    title: "Token Count Source",
+    placeHolder: "Choose model-based or encoding-based token counting"
+  });
+  if (picked === undefined) {
+    return;
+  }
+
+  if (picked.action.kind === "showDetails") {
+    toggleDetails(state);
+    return;
+  }
+
+  await applyCounterSelection(picked);
+}
+
 function reloadConfig(state: ExtensionState): void {
   const previous = state.config;
   const next = readConfig();
@@ -114,9 +227,9 @@ function reloadConfig(state: ExtensionState): void {
     state.statusBarItem = createStatusBarItem(next);
   }
 
-  if (previous.encoding !== next.encoding) {
+  if (hasCounterSourceChanged(previous, next)) {
     state.tokenCounter.dispose();
-    state.tokenCounter = new TokenCounter(next.encoding);
+    state.tokenCounter = new TokenCounter(toCounterSource(next));
   }
 
   updateFromActiveEditor(state);
@@ -128,7 +241,7 @@ export function activate(context: vscode.ExtensionContext): void {
     config,
     statusBarItem: createStatusBarItem(config),
     outputChannel: vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME),
-    tokenCounter: new TokenCounter(config.encoding),
+    tokenCounter: new TokenCounter(toCounterSource(config)),
     latestInfo: null,
     isShowingDetails: false
   };
@@ -158,6 +271,9 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand(COMMAND_TOGGLE_DETAILS, () => {
       toggleDetails(state);
+    }),
+    vscode.commands.registerCommand(COMMAND_PICK_COUNTER_SOURCE, async () => {
+      await pickCounterSource(state);
     }),
     new vscode.Disposable(() => {
       state.tokenCounter.dispose();

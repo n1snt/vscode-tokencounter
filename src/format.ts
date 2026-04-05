@@ -13,6 +13,7 @@ export function renderTokenInfo(info: TokenInfo): string[] {
   lines.push(`Tokens:     ${formatTokenCount(info.tokenCount)}`);
   lines.push(`Characters: ${formatTokenCount(info.characterCount)}`);
   lines.push(`Lines:      ${formatTokenCount(info.lineCount)}`);
+  lines.push(`Source:     ${info.sourceLabel}`);
   lines.push(`Encoding:   ${info.encoding}`);
   return lines;
 }

@@ -13,6 +13,7 @@ describe("format helpers", () => {
       tokenCount: 3210,
       characterCount: 9876,
       lineCount: 123,
+      sourceLabel: "Model: gpt-4o-mini",
       encoding: "cl100k_base"
     };
 
@@ -24,6 +25,7 @@ describe("format helpers", () => {
       "Tokens:     3,210",
       "Characters: 9,876",
       "Lines:      123",
+      "Source:     Model: gpt-4o-mini",
       "Encoding:   cl100k_base"
     ]);
   });
