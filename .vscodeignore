@@ -1,0 +1,7 @@
+**/*.ts
+test/**
+src/**
+tsconfig.json
+eslint.config.mjs
+vscode-filesize/**
+.gitignore
