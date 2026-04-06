@@ -49,7 +49,7 @@ jobs:
         id: build
         run: |
           npm run package:vsix
-          VSIX_FILE="$(node -p "`${require('./package.json').name}-${require('./package.json').version}.vsix`")"
+          VSIX_FILE="$(node -p "require('./package.json').name + '-' + require('./package.json').version + '.vsix'")"
           if [ ! -f "$VSIX_FILE" ]; then
             echo "Expected VSIX file '$VSIX_FILE' was not created."
             exit 1
