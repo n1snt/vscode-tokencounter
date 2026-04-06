@@ -59,6 +59,24 @@
           "type": "boolean",
           "default": true,
           "description": "Show token count for untitled editors."
+        },
+        "tokenCount.debounceMs": {
+          "type": "number",
+          "default": 120,
+          "minimum": 1,
+          "description": "Debounce delay in milliseconds for regular files while typing."
+        },
+        "tokenCount.largeFileDebounceMs": {
+          "type": "number",
+          "default": 450,
+          "minimum": 1,
+          "description": "Debounce delay in milliseconds for large files while typing."
+        },
+        "tokenCount.largeFileCharThreshold": {
+          "type": "number",
+          "default": 60000,
+          "minimum": 1,
+          "description": "Character threshold at or above which largeFileDebounceMs is used."
         }
       }
     }

@@ -6,6 +6,9 @@ export interface TokenCountConfig {
   readonly countingMode: CountingMode;
   readonly encoding: TiktokenEncoding;
   readonly model: TiktokenModel;
+  readonly debounceMs: number;
+  readonly largeFileDebounceMs: number;
+  readonly largeFileCharThreshold: number;
   readonly showForUntitled: boolean;
   readonly displayOnRightSide: boolean;
 }
@@ -16,6 +19,9 @@ const CONFIG_SECTION = "tokenCount";
 const DEFAULT_ENCODING: TiktokenEncoding = "cl100k_base";
 const DEFAULT_MODEL: TiktokenModel = "gpt-4o-mini";
 const DEFAULT_COUNTING_MODE: CountingMode = "encoding";
+const DEFAULT_DEBOUNCE_MS = 120;
+const DEFAULT_LARGE_FILE_DEBOUNCE_MS = 450;
+const DEFAULT_LARGE_FILE_CHAR_THRESHOLD = 60000;
 
 export const SUPPORTED_ENCODINGS: readonly TiktokenEncoding[] = [
   "gpt2",
@@ -46,6 +52,15 @@ const SUPPORTED_MODELS_SET: ReadonlySet<string> = new Set<string>([
 
 function asBoolean(input: unknown, fallback: boolean): boolean {
   return typeof input === "boolean" ? input : fallback;
+}
+
+function asPositiveInteger(input: unknown, fallback: number): number {
+  if (typeof input !== "number" || !Number.isFinite(input)) {
+    return fallback;
+  }
+
+  const rounded = Math.round(input);
+  return rounded > 0 ? rounded : fallback;
 }
 
 function toCountingMode(input: unknown, fallback: CountingMode): CountingMode {
@@ -89,6 +104,12 @@ export function readConfig(): TokenCountConfig {
     countingMode: toCountingMode(config.get("countingMode"), DEFAULT_COUNTING_MODE),
     encoding: toEncoding(config.get("encoding"), DEFAULT_ENCODING),
     model: toModel(config.get("model"), DEFAULT_MODEL),
+    debounceMs: asPositiveInteger(config.get("debounceMs"), DEFAULT_DEBOUNCE_MS),
+    largeFileDebounceMs: asPositiveInteger(config.get("largeFileDebounceMs"), DEFAULT_LARGE_FILE_DEBOUNCE_MS),
+    largeFileCharThreshold: asPositiveInteger(
+      config.get("largeFileCharThreshold"),
+      DEFAULT_LARGE_FILE_CHAR_THRESHOLD
+    ),
     displayOnRightSide: asBoolean(config.get("displayOnRightSide"), false),
     showForUntitled: asBoolean(config.get("showForUntitled"), true)
   };

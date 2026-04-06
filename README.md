@@ -22,6 +22,9 @@ A VS Code extension that shows the token count of the active editor file in the 
 - `tokenCount.model` (string): tiktoken model name (default: `gpt-4o-mini`).
 - `tokenCount.displayOnRightSide` (boolean): show on right status bar side.
 - `tokenCount.showForUntitled` (boolean): include untitled editors.
+- `tokenCount.debounceMs` (number): typing debounce for regular files (default: `120`).
+- `tokenCount.largeFileDebounceMs` (number): typing debounce for large files (default: `450`).
+- `tokenCount.largeFileCharThreshold` (number): threshold that triggers large-file debounce (default: `60000`).
 
 ## Development
 

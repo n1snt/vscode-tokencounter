@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import type { TokenCountConfig } from "./config";
 import { readConfig, SUPPORTED_ENCODINGS, SUPPORTED_MODELS } from "./config";
+import { getDebounceDelayMs } from "./debounce";
 import { canTrackDocument } from "./documentGuards";
 import { formatTokenCount, renderTokenInfo } from "./format";
 import type { CounterSource } from "./tokenCounter";
@@ -19,6 +20,7 @@ interface ExtensionState {
   config: TokenCountConfig;
   latestInfo: TokenInfo | null;
   isShowingDetails: boolean;
+  pendingUpdateTimeout: ReturnType<typeof setTimeout> | null;
 }
 function createStatusBarItem(config: TokenCountConfig): vscode.StatusBarItem {
   const alignment = config.displayOnRightSide ? vscode.StatusBarAlignment.Right : vscode.StatusBarAlignment.Left;
@@ -111,6 +113,33 @@ function updateFromActiveEditor(state: ExtensionState): void {
   if (state.isShowingDetails) {
     renderDetails(state.outputChannel, info);
   }
+}
+
+function cancelPendingUpdate(state: ExtensionState): void {
+  if (state.pendingUpdateTimeout === null) {
+    return;
+  }
+
+  clearTimeout(state.pendingUpdateTimeout);
+  state.pendingUpdateTimeout = null;
+}
+
+function scheduleUpdateFromActiveEditor(state: ExtensionState): void {
+  const activeEditor = vscode.window.activeTextEditor;
+  if (activeEditor === undefined) {
+    cancelPendingUpdate(state);
+    updateFromActiveEditor(state);
+    return;
+  }
+
+  const characterCount = activeEditor.document.getText().length;
+  const delayMs = getDebounceDelayMs(characterCount, state.config);
+
+  cancelPendingUpdate(state);
+  state.pendingUpdateTimeout = setTimeout(() => {
+    state.pendingUpdateTimeout = null;
+    updateFromActiveEditor(state);
+  }, delayMs);
 }
 
 function toggleDetails(state: ExtensionState): void {
@@ -232,6 +261,7 @@ function reloadConfig(state: ExtensionState): void {
     state.tokenCounter = new TokenCounter(toCounterSource(next));
   }
 
+  cancelPendingUpdate(state);
   updateFromActiveEditor(state);
 }
 
@@ -243,7 +273,8 @@ export function activate(context: vscode.ExtensionContext): void {
     outputChannel: vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME),
     tokenCounter: new TokenCounter(toCounterSource(config)),
     latestInfo: null,
-    isShowingDetails: false
+    isShowingDetails: false,
+    pendingUpdateTimeout: null
   };
 
   const subscriptions: vscode.Disposable[] = [
@@ -257,15 +288,17 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeTextDocument((event: vscode.TextDocumentChangeEvent) => {
       const activeEditor = vscode.window.activeTextEditor;
       if (activeEditor !== undefined && event.document.uri.toString() === activeEditor.document.uri.toString()) {
-        updateFromActiveEditor(state);
+        scheduleUpdateFromActiveEditor(state);
       }
     }),
     vscode.window.onDidChangeActiveTextEditor(() => {
+      cancelPendingUpdate(state);
       updateFromActiveEditor(state);
     }),
     vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
       const activeEditor = vscode.window.activeTextEditor;
       if (activeEditor !== undefined && document.uri.toString() === activeEditor.document.uri.toString()) {
+        cancelPendingUpdate(state);
         updateFromActiveEditor(state);
       }
     }),
@@ -276,6 +309,7 @@ export function activate(context: vscode.ExtensionContext): void {
       await pickCounterSource(state);
     }),
     new vscode.Disposable(() => {
+      cancelPendingUpdate(state);
       state.tokenCounter.dispose();
     })
   ];
