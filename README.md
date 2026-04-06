@@ -1,4 +1,4 @@
-# vscode-tokencount
+# vscode-tokencounter
 
 A VS Code extension that shows the token count of the active editor file in the status bar using `tiktoken`.
 

@@ -1,6 +1,6 @@
 {
-  "name": "vscode-tokencount",
-  "displayName": "Token Count",
+  "name": "vscode-tokencounter",
+  "displayName": "VS Code Token Counter",
   "description": "Show token count for the active file in the VS Code status bar",
   "version": "0.0.1",
   "publisher": "nishant-bhandari",
