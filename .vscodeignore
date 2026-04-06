@@ -5,3 +5,6 @@ tsconfig.json
 eslint.config.mjs
 vscode-filesize/**
 .gitignore
+dist/test/**
+**/*.map
+**/*.vsix

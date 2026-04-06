@@ -35,3 +35,22 @@ npm test
 ```
 
 Press `F5` in VS Code to launch the Extension Development Host.
+
+## Packaging and Publishing
+
+Use `vsce` via npm scripts:
+
+```bash
+npm run package:vsix
+npm run package:pre-release
+npm run publish:vsce
+npm run publish:patch
+npm run publish:minor
+npm run publish:major
+```
+
+Before publishing to Marketplace:
+
+- Set a real `publisher` in `package.json`.
+- Run `vsce login <publisher-id>`.
+- Ensure you have a Marketplace PAT with `Marketplace (Manage)` scope.

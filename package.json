@@ -5,9 +5,16 @@
   "version": "0.0.1",
   "publisher": "local-dev",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/n1snt/vscode-tokencount.git"
+  },
+  "bugs": {
+    "url": "https://github.com/n1snt/vscode-tokencount/issues"
+  },
   "type": "commonjs",
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.110.0"
   },
   "categories": [
     "Other"
@@ -86,6 +93,13 @@
     "compile": "tsc -p ./tsconfig.json",
     "watch": "tsc -p ./tsconfig.json --watch",
     "lint": "eslint . --ext .ts",
+    "vscode:prepublish": "npm run compile",
+    "package:vsix": "vsce package",
+    "package:pre-release": "vsce package --pre-release",
+    "publish:vsce": "vsce publish",
+    "publish:patch": "vsce publish patch",
+    "publish:minor": "vsce publish minor",
+    "publish:major": "vsce publish major",
     "pretest": "npm run compile && npm run lint",
     "test": "mocha \"dist/test/**/*.test.js\" --timeout 5000"
   },
@@ -106,6 +120,7 @@
     "@typescript-eslint/eslint-plugin": "^8.58.0",
     "@typescript-eslint/parser": "^8.58.0",
     "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^2.22.0",
     "eslint": "^10.2.0",
     "globals": "^17.4.0",
     "mocha": "^11.7.5",
