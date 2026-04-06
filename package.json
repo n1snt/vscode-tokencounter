@@ -3,7 +3,8 @@
   "displayName": "Token Count",
   "description": "Show token count for the active file in the VS Code status bar",
   "version": "0.0.1",
-  "publisher": "local-dev",
+  "publisher": "nishant",
+  "icon": "images/tokencount_icon.png",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -14,7 +15,7 @@
   },
   "type": "commonjs",
   "engines": {
-    "vscode": "^1.110.0"
+    "vscode": "^1.105.0"
   },
   "categories": [
     "Other"
@@ -116,7 +117,7 @@
     "@eslint/js": "^10.0.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^25.5.2",
-    "@types/vscode": "^1.110.0",
+    "@types/vscode": "^1.105.0",
     "@typescript-eslint/eslint-plugin": "^8.58.0",
     "@typescript-eslint/parser": "^8.58.0",
     "@vscode/test-electron": "^2.5.2",
