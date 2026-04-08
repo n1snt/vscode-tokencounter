@@ -4,6 +4,11 @@
 
 A VS Code extension that counts tokens for the active editor using OpenAI `tiktoken` and shows the result in the status bar.
 
+## Install
+
+- VS Code Marketplace: [VS Code Token Counter](https://marketplace.visualstudio.com/items?itemName=nishant-bhandari.vscode-tokencounter)
+- Open VSX: [vscode-tokencounter](https://open-vsx.org/extension/nishant-bhandari/vscode-tokencounter)
+
 ## What This Project Does
 
 `vscode-tokencount` helps you estimate prompt size while writing code or text by showing live token counts in VS Code.
